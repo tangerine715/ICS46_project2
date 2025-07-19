@@ -327,7 +327,6 @@ const K& SkipList<K, V>::nextKey(const K& key) const {
         while (temp->forward!=nullptr && temp->forward->item.first<key)
         {
             temp = temp->forward;
-            ++size;
         }
         if (temp->forward != nullptr && temp->forward->item.first==key)
         {
@@ -342,7 +341,6 @@ const K& SkipList<K, V>::nextKey(const K& key) const {
             return temp->forward->item.first;
         }
         temp = temp->down;
-        ++size;
     }
     throw std::out_of_range("");
 }
@@ -350,17 +348,15 @@ const K& SkipList<K, V>::nextKey(const K& key) const {
 template <typename K, typename V>
 const K& SkipList<K, V>::previousKey(const K& key) const {
     Node* temp = head;
-    size_t size = 1;
     bool leftFirstLayer = false;
     while (temp!=nullptr)
     {
         while (temp->forward!=nullptr && temp->forward->item.first<key)
         {
             temp = temp->forward;
-            ++size;
             leftFirstLayer = true;
         }
-        if(temp->forward != nullptr && temp->forward->item.first==key)
+        if(temp->forward!=nullptr && temp->forward->item.first==key)
         {
             // std::cout << "current node: " << temp->item.first << temp->item.second << std::endl;
             // std::cout << "other: " << temp->forward->item.first << temp->forward->item.second << std::endl;
@@ -368,7 +364,6 @@ const K& SkipList<K, V>::previousKey(const K& key) const {
             if (temp->down == nullptr) { throw std::out_of_range(""); }
         }
         temp = temp->down;
-        ++size;
     }
     throw std::out_of_range("");
 }
@@ -427,6 +422,13 @@ std::pair<V&, size_t> SkipList<K, V>::find(const K& key) {
 template <typename K, typename V>
 std::optional<size_t> SkipList<K, V>::insert(const K& key, const V& value) {
     // std::cout << "BEGINNING TO INSERT " << key << "," << value << std::endl;
+    try 
+    {
+        (void)find(key);
+        return std::nullopt;
+    }
+    catch (std::out_of_range &e) { }
+    
     size_t tracker = 0;
     size_t curSize = size();
     constexpr size_t BOUNDARY = 16;
