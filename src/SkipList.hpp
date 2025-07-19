@@ -275,6 +275,7 @@ size_t SkipList<K, V>::size() const noexcept {
     size_t size = 0;
     Node* temp = head;
     for (; temp->down!= nullptr; temp = temp->down) {}
+    if (temp->forward == nullptr) { return size; }
     for (; temp!= nullptr; temp = temp->forward, ++size) { }
     return size-1; //CHECK
 }
@@ -421,12 +422,6 @@ std::pair<V&, size_t> SkipList<K, V>::find(const K& key) {
 template <typename K, typename V>
 std::optional<size_t> SkipList<K, V>::insert(const K& key, const V& value) {
     // std::cout << "BEGINNING TO INSERT " << key << "," << value << std::endl;
-    try 
-    {
-        (void)find(key);
-        return std::nullopt;
-    }
-    catch (std::out_of_range &e) { }
 
     size_t tracker = 0;
     size_t curSize = size();
