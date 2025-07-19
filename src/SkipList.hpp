@@ -420,7 +420,12 @@ std::pair<V&, size_t> SkipList<K, V>::find(const K& key) {
 template <typename K, typename V>
 std::optional<size_t> SkipList<K, V>::insert(const K& key, const V& value) {
     // std::cout << "BEGINNING TO INSERT " << key << "," << value << std::endl;
-
+    try 
+    {
+        (void) find(key);
+        return std::nullopt;
+    } 
+    catch (std::out_of_range) { } //just in case of somehow inserting random nodes
     size_t tracker = 0;
     size_t curSize = size();
     constexpr size_t BOUNDARY = 16;
