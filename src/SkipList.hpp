@@ -3,11 +3,15 @@
 
 #include <cmath>  // for log2
 #include <cstddef>
+#include <stack>
 #include <stdexcept>
 #include <string>
+#include <utility>
 #include <vector>
 #include <optional>
 #include <cstdint>
+#include <iostream> //TEMPORARY
+#include <algorithm>
 
 namespace shindler::ics46::project2 {
 
@@ -146,10 +150,19 @@ constexpr inline bool flipCoin(const std::string& key, size_t previousFlips) {
     return std::to_integer<uint8_t>(hash & bitToSelect) != 0;
 }
 
+
+
 template <typename K, typename V>
 class SkipList {
    private:
     // private variables go here.
+    struct Node
+    {
+        std::pair<K, V> item;
+        Node* forward;
+        Node* down;
+    };
+    Node* head{};
 
    public:
     SkipList();
@@ -234,92 +247,321 @@ class SkipList {
 };
 
 template <typename K, typename V>
-SkipList<K, V>::SkipList() {
-    // TODO - your implementation goes here!
+SkipList<K, V>::SkipList()
+{
+    Node* bottom = new Node{std::make_pair(K{}, V{}), nullptr, nullptr};
+    head = new Node{std::make_pair(K{}, V{}), nullptr, bottom};
 }
 
 template <typename K, typename V>
 SkipList<K, V>::~SkipList() {
-    // TODO - your implementation goes here!
+    Node* temp = head; 
+    while (temp != nullptr)
+    {
+        for (Node* cur = temp->forward; cur!=nullptr;)
+        {
+            Node* cur_temp = cur;
+            cur = cur->forward;
+            delete cur_temp;
+        }
+        Node* temp_temp = temp;
+        temp = temp->down;
+        delete temp_temp;
+    }
 }
 
 template <typename K, typename V>
 size_t SkipList<K, V>::size() const noexcept {
-    // TODO - your implementation goes here!
-    return {};
+    size_t size = 0;
+    Node* temp = head;
+    for (; temp->down!= nullptr; temp = temp->down) {}
+    for (; temp!= nullptr; temp = temp->forward, ++size) { }
+    return size-1; //CHECK
 }
 
 template <typename K, typename V>
 bool SkipList<K, V>::empty() const noexcept {
-    // TODO - your implementation goes here!
-    return {};
+    Node *temp = head;
+    for (; temp->down != nullptr; temp = temp->down) { }
+    return temp->forward == nullptr;
 }
 
 template <typename K, typename V>
 size_t SkipList<K, V>::layers() const noexcept {
-    // TODO - your implementation goes here!
-    return {};
+    int layers = 0;
+    for (Node* temp = head; temp != nullptr; temp = temp->down, ++layers) { }
+    return layers;
 }
 
 template <typename K, typename V>
 size_t SkipList<K, V>::height(const K& key) const {
-    // TODO - your implementation goes here!
-    return {};
+    Node* temp = head;
+    while (temp != nullptr)
+    {
+        while (temp->forward != nullptr && temp->forward->item.first<key)
+        {
+            temp = temp->forward;
+            // std::cout << "going forward for height!" << std::endl;
+        }
+        if (temp->forward != nullptr && temp->forward->item.first == key) 
+        {
+            temp = temp->forward;
+            break;
+        }
+        temp = temp->down;
+        // std::cout << "going down for height!" << std::endl;
+    }
+    if (temp == nullptr) { throw std::out_of_range{"Key does not exist"}; };
+
+    int height = 0;
+    for (; temp!=nullptr; temp = temp->down, ++height) { }
+    return height; 
 }
 
 template <typename K, typename V>
 const K& SkipList<K, V>::nextKey(const K& key) const {
-    // TODO - your implementation goes here!
-    return {};
+    Node* temp = head;
+    size_t size = 1;
+    while (temp!=nullptr)
+    {
+        while (temp->forward!=nullptr && temp->forward->item.first<key)
+        {
+            temp = temp->forward;
+            ++size;
+        }
+        if (temp->forward != nullptr && temp->forward->item.first==key)
+        {
+            // std::cout << "current node: " << temp->item.first << temp->item.second << std::endl;
+            // std::cout << "other: " << temp->forward->item.first << temp->forward->item.second << std::endl;
+            temp = temp->forward;
+            while (temp->down != nullptr)
+            {
+                temp = temp->down;
+            }
+            if (temp->forward==nullptr) {throw std::out_of_range("");}
+            return temp->forward->item.first;
+        }
+        temp = temp->down;
+        ++size;
+    }
+    throw std::out_of_range("");
 }
 
 template <typename K, typename V>
 const K& SkipList<K, V>::previousKey(const K& key) const {
-    // TODO - your implementation goes here!
-    return {};
+    Node* temp = head;
+    size_t size = 1;
+    bool leftFirstLayer = false;
+    while (temp!=nullptr)
+    {
+        while (temp->forward!=nullptr && temp->forward->item.first<key)
+        {
+            temp = temp->forward;
+            ++size;
+            leftFirstLayer = true;
+        }
+        if(temp->forward != nullptr && temp->forward->item.first==key)
+        {
+            // std::cout << "current node: " << temp->item.first << temp->item.second << std::endl;
+            // std::cout << "other: " << temp->forward->item.first << temp->forward->item.second << std::endl;
+            if (temp->down == nullptr && leftFirstLayer) { return temp->item.first; }
+            if (temp->down == nullptr) { throw std::out_of_range(""); }
+        }
+        temp = temp->down;
+        ++size;
+    }
+    throw std::out_of_range("");
 }
 
 template <typename K, typename V>
 std::pair<const V&, size_t> SkipList<K, V>::find(const K& key) const {
-    // TODO - your implementation goes here!
-    return {{}, {}};
+    Node* temp = head;
+    size_t size = 1;
+    while (temp!=nullptr)
+    {
+        while (temp->forward!=nullptr && temp->forward->item.first<key)
+        {
+            temp = temp->forward;
+            ++size;
+        }
+        if(temp->forward != nullptr && temp->forward->item.first==key)
+        {
+            // std::cout << "current node: " << temp->item.first << temp->item.second << std::endl;
+            // std::cout << "other: " << temp->forward->item.first << temp->forward->item.second << std::endl;
+            temp = temp->forward;
+            for (; temp->down!=nullptr; temp = temp->down, ++size) {}
+            return {temp->item.second, size+1};
+        }
+        temp = temp->down;
+        ++size;
+    }
+    throw std::out_of_range("");
 }
 
 template <typename K, typename V>
 std::pair<V&, size_t> SkipList<K, V>::find(const K& key) {
-    // TODO - your implementation goes here!
-    auto* tmp_value = new V;  // Stub to make the project compile by default!
-    return {*tmp_value, {}};
+    // std::cout << "IM HEREEE FOR KEY " << key << std::endl;
+    Node* temp = head;
+    size_t size = 1;
+    while (temp!=nullptr)
+    {
+        while (temp->forward!=nullptr && temp->forward->item.first<key)
+        {
+            temp = temp->forward;
+            ++size;
+        }
+        if(temp->forward != nullptr && temp->forward->item.first==key)
+        {
+            // std::cout << "current node: " << temp->item.first << temp->item.second << std::endl;
+            // std::cout << "other: " << temp->forward->item.first << temp->forward->item.second << std::endl;
+            temp = temp->forward;
+            for (; temp->down!=nullptr; temp = temp->down, ++size) {}
+            return {temp->item.second, size+1};
+        }
+        temp = temp->down;
+        ++size;
+    }
+    throw std::out_of_range("");
 }
 
 template <typename K, typename V>
 std::optional<size_t> SkipList<K, V>::insert(const K& key, const V& value) {
-    // TODO - your implementation goes here!
-    return {};
+    // std::cout << "BEGINNING TO INSERT " << key << "," << value << std::endl;
+    size_t tracker = 0;
+    size_t curSize = size();
+    constexpr size_t BOUNDARY = 16;
+
+    constexpr double MAX_BEFORE_BOUNDARY = 12;
+    const double MAX_PAST_BOUNDARY = (3 * std::ceil(std::log2(curSize+1)));
+    // std::cout << "HI CURRENT SIZE IS " << curSize << std::endl;
+    const double MAX_POSSIBLE = (curSize < BOUNDARY) ? MAX_BEFORE_BOUNDARY : MAX_PAST_BOUNDARY;
+    // std::cout << "SO MAX POSSIBLE IS  " << MAX_POSSIBLE << std::endl;
+
+    double insertionHeight = 1;
+    while (insertionHeight < MAX_POSSIBLE && flipCoin(key, insertionHeight-1)) 
+    {
+        ++insertionHeight;
+    }
+    // std::cout << "I HAVE REACHED INS HEI OF  " << insertionHeight << " for key " 
+    // << key << std::endl;
+
+
+    // std::cout << "INSERTION HEIGHT: " << insertionHeight << std::endl;
+
+    Node* temp = head;
+
+    double currentHeight = layers();
+    // std::cout << "layers is " << currentHeight << std::endl;
+    double layerDifference = insertionHeight - currentHeight;
+    // std::cout << "layerDifference is " << layerDifference << std::endl;
+    if (layerDifference >= 0)
+    {
+        for (double i = 0; i <= layerDifference; ++i) 
+        {
+            head = new Node{{K{}, V{}}, nullptr, head};
+        }
+        temp = head->down;
+    }
+    else
+    {
+        for (double i = 0; i < -1*layerDifference; ++i) 
+        {
+            temp = temp->down;
+            ++tracker;
+        }
+    }
+    // std::cout << "layers is now " << layers() << std::endl;
+
+    std::stack<Node*> previous_insertions{};
+
+    while(temp!=nullptr)
+    {
+        while(temp != nullptr && temp->forward != nullptr && temp->forward->item.first<key)
+        {
+            temp = temp->forward;
+            ++tracker;
+        }
+        if (temp->forward != nullptr && temp->forward->item.first==key)
+        {
+            return std::nullopt;
+        }
+        //temp->forward is either nullptr or a key > insertion key
+        Node* new_insertion = new Node{{key, value}, temp->forward, nullptr};
+        // std::cout << "Inserting the key " << key << " after KEY " << temp->item.first << std::endl;
+        temp->forward = new_insertion;
+
+        if (!previous_insertions.empty())
+        {
+            previous_insertions.top()->down = temp->forward;
+            previous_insertions.pop();
+        }
+        previous_insertions.push(temp->forward);
+        // std::cout << "(going down) CURRENT KEY: " << temp->item.first << std::endl;
+        temp = temp->down;
+        ++tracker;
+    }
+
+    return tracker-1;
 }
 
 template <typename K, typename V>
 std::vector<K> SkipList<K, V>::allKeysInOrder() const {
-    // TODO - your implementation goes here!
-    return {};
+    std::vector<K> allKeys{};
+    Node* temp = head;
+    for (; temp->down != nullptr; temp = temp->down) { }
+    temp = temp->forward; //escaping the first default node
+    for (; temp != nullptr; temp = temp->forward) 
+    { 
+        allKeys.push_back(temp->item.first);
+    }
+    return allKeys;
 }
 
 template <typename K, typename V>
 bool SkipList<K, V>::isSmallestKey(const K& key) const {
-    // TODO - your implementation goes here!
-    return {};
+    Node* temp = head;
+    for (; temp->down != nullptr; temp = temp->down) { }
+    if (temp->forward == nullptr) { return false; }
+    return temp->forward->item.first==key;
 }
 
 template <typename K, typename V>
 bool SkipList<K, V>::isLargestKey(const K& key) const {
-    // TODO - your implementation goes here!
-    return {};
+    Node* temp = head;
+    for (; temp->down != nullptr; temp = temp->down) { }
+    for (; temp->forward != nullptr; temp = temp->forward) { }
+    return temp->item.first==key;
 }
 
 template <typename K, typename V>
 void SkipList<K, V>::erase(const K& key) {
-    // TODO -
+
+    try 
+    {
+        (void)find(key);
+    } 
+    catch (std::out_of_range &e) 
+    {
+        throw std::out_of_range("");
+    }
+
+    Node* temp = head;
+    while (temp != nullptr)
+    {
+        while (temp->forward!=nullptr && temp->forward->item.first < key)
+        {
+            temp = temp->forward;
+        }
+        if (temp->forward != nullptr && temp->forward->item.first == key) // has to be equal
+        {
+            Node* new_temp = temp->forward;
+            temp->forward = temp->forward->forward;
+            delete new_temp;
+        }
+        temp = temp->down;
+    }
 }
 
 }  // namespace shindler::ics46::project2
 #endif
+
