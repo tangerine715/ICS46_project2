@@ -321,7 +321,6 @@ size_t SkipList<K, V>::height(const K& key) const {
 template <typename K, typename V>
 const K& SkipList<K, V>::nextKey(const K& key) const {
     Node* temp = head;
-    size_t size = 1;
     while (temp!=nullptr)
     {
         while (temp->forward!=nullptr && temp->forward->item.first<key)
@@ -428,7 +427,7 @@ std::optional<size_t> SkipList<K, V>::insert(const K& key, const V& value) {
         return std::nullopt;
     }
     catch (std::out_of_range &e) { }
-    
+
     size_t tracker = 0;
     size_t curSize = size();
     constexpr size_t BOUNDARY = 16;
