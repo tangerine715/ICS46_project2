@@ -161,6 +161,7 @@ class SkipList {
         std::pair<K, V> item;
         Node* forward;
         Node* down;
+        bool isDummy;
     };
     Node* head{};
 
@@ -249,8 +250,8 @@ class SkipList {
 template <typename K, typename V>
 SkipList<K, V>::SkipList()
 {
-    Node* bottom = new Node{std::make_pair(K{}, V{}), nullptr, nullptr};
-    head = new Node{std::make_pair(K{}, V{}), nullptr, bottom};
+    Node* bottom = new Node{std::make_pair(K{}, V{}), nullptr, nullptr, true};
+    head = new Node{std::make_pair(K{}, V{}), nullptr, bottom, true};
 }
 
 template <typename K, typename V>
@@ -275,7 +276,6 @@ size_t SkipList<K, V>::size() const noexcept {
     size_t size = 0;
     Node* temp = head;
     for (; temp->down!= nullptr; temp = temp->down) {}
-    if (temp->forward == nullptr) { return size; }
     for (; temp!= nullptr; temp = temp->forward, ++size) { }
     return size-1; //CHECK
 }
@@ -348,19 +348,17 @@ const K& SkipList<K, V>::nextKey(const K& key) const {
 template <typename K, typename V>
 const K& SkipList<K, V>::previousKey(const K& key) const {
     Node* temp = head;
-    bool leftFirstLayer = false;
     while (temp!=nullptr)
     {
         while (temp->forward!=nullptr && temp->forward->item.first<key)
         {
             temp = temp->forward;
-            leftFirstLayer = true;
         }
         if(temp->forward!=nullptr && temp->forward->item.first==key)
         {
             // std::cout << "current node: " << temp->item.first << temp->item.second << std::endl;
             // std::cout << "other: " << temp->forward->item.first << temp->forward->item.second << std::endl;
-            if (temp->down == nullptr && leftFirstLayer) { return temp->item.first; }
+            if (temp->down == nullptr && !temp->isDummy) { return temp->item.first; }
             if (temp->down == nullptr) { throw std::out_of_range(""); }
         }
         temp = temp->down;
@@ -454,7 +452,7 @@ std::optional<size_t> SkipList<K, V>::insert(const K& key, const V& value) {
     {
         for (double i = 0; i <= layerDifference; ++i) 
         {
-            head = new Node{{K{}, V{}}, nullptr, head};
+            head = new Node{{K{}, V{}}, nullptr, head, true};
         }
         temp = head->down;
     }
@@ -482,7 +480,7 @@ std::optional<size_t> SkipList<K, V>::insert(const K& key, const V& value) {
             return std::nullopt;
         }
         //temp->forward is either nullptr or a key > insertion key
-        Node* new_insertion = new Node{{key, value}, temp->forward, nullptr};
+        Node* new_insertion = new Node{{key, value}, temp->forward, nullptr, false};
         // std::cout << "Inserting the key " << key << " after KEY " << temp->item.first << std::endl;
         temp->forward = new_insertion;
 
