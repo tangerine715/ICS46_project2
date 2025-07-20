@@ -158,7 +158,7 @@ class SkipList {
     // private variables go here.
     struct Node
     {
-        std::pair<K, V> item;
+        std::optional<std::pair<K, V>> item;
         Node* forward;
         Node* down;
         bool isDummy;
@@ -250,8 +250,8 @@ class SkipList {
 template <typename K, typename V>
 SkipList<K, V>::SkipList()
 {
-    Node* bottom = new Node{std::make_pair(K{}, V{}), nullptr, nullptr, true};
-    head = new Node{std::make_pair(K{}, V{}), nullptr, bottom, true};
+    Node* bottom = new Node{std::nullopt, nullptr, nullptr, true};
+    head = new Node{std::nullopt, nullptr, bottom, true};
 }
 
 template <typename K, typename V>
@@ -299,12 +299,12 @@ size_t SkipList<K, V>::height(const K& key) const {
     Node* temp = head;
     while (temp != nullptr)
     {
-        while (temp->forward != nullptr && temp->forward->item.first<key)
+        while (temp->forward != nullptr && temp->forward->item && temp->forward->item->first<key)
         {
             temp = temp->forward;
             // std::cout << "going forward for height!" << std::endl;
         }
-        if (temp->forward != nullptr && temp->forward->item.first == key) 
+        if (temp->forward != nullptr && temp->forward->item && temp->forward->item->first == key) 
         {
             temp = temp->forward;
             break;
@@ -322,48 +322,39 @@ size_t SkipList<K, V>::height(const K& key) const {
 template <typename K, typename V>
 const K& SkipList<K, V>::nextKey(const K& key) const {
     Node* temp = head;
-    while (temp!=nullptr)
+    while (temp->down!=nullptr)
     {
-        while (temp->forward!=nullptr && temp->forward->item.first<key)
-        {
-            temp = temp->forward;
-        }
-        if (temp->forward != nullptr && temp->forward->item.first==key)
-        {
-            // std::cout << "current node: " << temp->item.first << temp->item.second << std::endl;
-            // std::cout << "other: " << temp->forward->item.first << temp->forward->item.second << std::endl;
-            temp = temp->forward;
-            while (temp->down != nullptr)
-            {
-                temp = temp->down;
-            }
-            if (temp->forward==nullptr) {throw std::out_of_range("");}
-            return temp->forward->item.first;
-        }
         temp = temp->down;
+        while (temp->forward!=nullptr && temp->forward->item && temp->forward->item->first<key)
+        {
+            temp = temp->forward;
+        }
     }
-    throw std::out_of_range("");
+    if (temp->forward == nullptr || (temp->forward->item && temp->forward->item->first>key)) //if key doesn't exist in list
+    {
+        throw std::out_of_range("");
+    }
+    temp = temp->forward; //it must be equal now
+    if (temp->forward==nullptr) {throw std::out_of_range("");}
+    return temp->forward->item->first;
 }
 
 template <typename K, typename V>
 const K& SkipList<K, V>::previousKey(const K& key) const {
     Node* temp = head;
-    while (temp!=nullptr)
+    while (temp->down!=nullptr)
     {
-        while (temp->forward!=nullptr && temp->forward->item.first<key)
+        temp = temp->down;
+        while (temp->forward!=nullptr && temp->forward->item && temp->forward->item->first<key)
         {
             temp = temp->forward;
         }
-        if(temp->forward!=nullptr && temp->forward->item.first==key)
-        {
-            // std::cout << "current node: " << temp->item.first << temp->item.second << std::endl;
-            // std::cout << "other: " << temp->forward->item.first << temp->forward->item.second << std::endl;
-            if (temp->down == nullptr && !temp->isDummy) { return temp->item.first; }
-            if (temp->down == nullptr) { throw std::out_of_range(""); }
-        }
-        temp = temp->down;
     }
-    throw std::out_of_range("");
+    if (temp->forward == nullptr || (temp->forward->item && temp->forward->item->first>key) || temp->isDummy)
+    {
+        throw std::out_of_range("");
+    }
+    return temp->item->first;
 }
 
 template <typename K, typename V>
@@ -372,18 +363,18 @@ std::pair<const V&, size_t> SkipList<K, V>::find(const K& key) const {
     size_t size = 1;
     while (temp!=nullptr)
     {
-        while (temp->forward!=nullptr && temp->forward->item.first<key)
+        while (temp->forward!=nullptr && temp->forward->item && temp->forward->item->first<key)
         {
             temp = temp->forward;
             ++size;
         }
-        if(temp->forward != nullptr && temp->forward->item.first==key)
+        if(temp->forward != nullptr && temp->forward->item && temp->forward->item->first==key)
         {
-            // std::cout << "current node: " << temp->item.first << temp->item.second << std::endl;
-            // std::cout << "other: " << temp->forward->item.first << temp->forward->item.second << std::endl;
+            // std::cout << "current node: " << temp->item->first << temp->item->second << std::endl;
+            // std::cout << "other: " << temp->forward->item->first << temp->forward->item->second << std::endl;
             temp = temp->forward;
             for (; temp->down!=nullptr; temp = temp->down, ++size) {}
-            return {temp->item.second, size+1};
+            return {temp->item->second, size+1};
         }
         temp = temp->down;
         ++size;
@@ -398,18 +389,18 @@ std::pair<V&, size_t> SkipList<K, V>::find(const K& key) {
     size_t size = 1;
     while (temp!=nullptr)
     {
-        while (temp->forward!=nullptr && temp->forward->item.first<key)
+        while (temp->forward!=nullptr && temp->forward->item && temp->forward->item->first<key)
         {
             temp = temp->forward;
             ++size;
         }
-        if(temp->forward != nullptr && temp->forward->item.first==key)
+        if(temp->forward != nullptr && temp->forward->item && temp->forward->item->first==key)
         {
-            // std::cout << "current node: " << temp->item.first << temp->item.second << std::endl;
-            // std::cout << "other: " << temp->forward->item.first << temp->forward->item.second << std::endl;
+            // std::cout << "current node: " << temp->item->first << temp->item->second << std::endl;
+            // std::cout << "other: " << temp->forward->item->first << temp->forward->item->second << std::endl;
             temp = temp->forward;
             for (; temp->down!=nullptr; temp = temp->down, ++size) {}
-            return {temp->item.second, size+1};
+            return {temp->item->second, size+1};
         }
         temp = temp->down;
         ++size;
@@ -457,7 +448,7 @@ std::optional<size_t> SkipList<K, V>::insert(const K& key, const V& value) {
     {
         for (double i = 0; i <= layerDifference; ++i) 
         {
-            head = new Node{{K{}, V{}}, nullptr, head, true};
+            head = new Node{std::nullopt, nullptr, head, true};
         }
         temp = head->down;
     }
@@ -471,31 +462,35 @@ std::optional<size_t> SkipList<K, V>::insert(const K& key, const V& value) {
     }
     // std::cout << "layers is now " << layers() << std::endl;
 
-    std::stack<Node*> previous_insertions{};
+    Node* previous_insertion = new Node{std::nullopt, nullptr, nullptr, true};
 
     while(temp!=nullptr)
     {
-        while(temp != nullptr && temp->forward != nullptr && temp->forward->item.first<key)
+        while(temp != nullptr && temp->forward != nullptr && temp->forward->item && temp->forward->item->first<key)
         {
             temp = temp->forward;
             ++tracker;
         }
-        if (temp->forward != nullptr && temp->forward->item.first==key)
+        if (temp->forward != nullptr && temp->forward->item && temp->forward->item->first==key)
         {
             return std::nullopt;
         }
         //temp->forward is either nullptr or a key > insertion key
-        Node* new_insertion = new Node{{key, value}, temp->forward, nullptr, false};
-        // std::cout << "Inserting the key " << key << " after KEY " << temp->item.first << std::endl;
+        std::pair<K, V> pair = {key, value};
+        Node* new_insertion = new Node{std::optional<std::pair<K, V>>{pair}, temp->forward, nullptr, false};
+        // std::cout << "Inserting the key " << key << " after KEY " << temp->item->first << std::endl;
         temp->forward = new_insertion;
 
-        if (!previous_insertions.empty())
+        if (!previous_insertion->isDummy)
         {
-            previous_insertions.top()->down = temp->forward;
-            previous_insertions.pop();
+            previous_insertion->down = temp->forward;
         }
-        previous_insertions.push(temp->forward);
-        // std::cout << "(going down) CURRENT KEY: " << temp->item.first << std::endl;
+        else 
+        {
+            delete previous_insertion;
+        }
+        previous_insertion = temp->forward;
+        // std::cout << "(going down) CURRENT KEY: " << temp->item->first << std::endl;
         temp = temp->down;
         ++tracker;
     }
@@ -511,7 +506,7 @@ std::vector<K> SkipList<K, V>::allKeysInOrder() const {
     temp = temp->forward; //escaping the first default node
     for (; temp != nullptr; temp = temp->forward) 
     { 
-        allKeys.push_back(temp->item.first);
+        allKeys.push_back(temp->item->first);
     }
     return allKeys;
 }
@@ -521,7 +516,7 @@ bool SkipList<K, V>::isSmallestKey(const K& key) const {
     Node* temp = head;
     for (; temp->down != nullptr; temp = temp->down) { }
     if (temp->forward == nullptr) { return false; }
-    return temp->forward->item.first==key;
+    return temp->forward->item && temp->forward->item->first==key;
 }
 
 template <typename K, typename V>
@@ -529,29 +524,22 @@ bool SkipList<K, V>::isLargestKey(const K& key) const {
     Node* temp = head;
     for (; temp->down != nullptr; temp = temp->down) { }
     for (; temp->forward != nullptr; temp = temp->forward) { }
-    return temp->item.first==key;
+    return temp->item->first==key;
 }
 
 template <typename K, typename V>
 void SkipList<K, V>::erase(const K& key) {
 
-    try 
-    {
-        (void)find(key);
-    } 
-    catch (std::out_of_range &e) 
-    {
-        throw std::out_of_range("");
-    }
+    (void)find(key);
 
     Node* temp = head;
     while (temp != nullptr)
     {
-        while (temp->forward!=nullptr && temp->forward->item.first < key)
+        while (temp->forward!=nullptr && temp->forward->item && temp->forward->item->first < key)
         {
             temp = temp->forward;
         }
-        if (temp->forward != nullptr && temp->forward->item.first == key) // has to be equal
+        if (temp->forward != nullptr && temp->forward->item && temp->forward->item->first == key) // has to be equal
         {
             Node* new_temp = temp->forward;
             temp->forward = temp->forward->forward;

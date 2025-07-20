@@ -138,6 +138,12 @@ TEST_CASE("SkipList:LayersTest:Expect16", "[Sample][SkipList][Layers]") {
     REQUIRE(skipList.layers() == 16);
 }
 
+TEST_CASE("SkipList:InitializationTest:Strings", "[Sample][SkipList][Insert]")
+{
+    proj2::SkipList<std::string, unsigned> skipList;
+    skipList.insert("1", 1);
+}
+
 // These are stubs, suggested tests for you to implement yourself
 // to ensure your solution works correctly
 
