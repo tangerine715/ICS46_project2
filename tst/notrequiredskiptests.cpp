@@ -160,15 +160,60 @@ TEST_CASE("SkipList:InitializationTest:Strings", "[Sample][SkipList][Insert]")
 //     REQUIRE(false);
 // }
 
+TEST_CASE("SkipList:ValidateNumberAccessedFind",
+          "[Sample][SkipList][Find]") {
+    const unsigned int NUMBER_OF_ELEMENTS = 10;
+    const std::vector<unsigned> EXPECTED_HEIGHTS = {1, 2, 1, 3, 1,
+                                                    2, 1, 4, 1, 2};
+
+    proj2::SkipList<unsigned, unsigned> skipList;
+    // skipList.insert(1, 1);
+    // skipList.insert(2, 2);
+    // REQUIRE(skipList.find(2).first == 2);
+    // REQUIRE(skipList.find(1).first == 1);
+    std::vector<unsigned> heights;
+
+    for (unsigned i = 0; i < NUMBER_OF_ELEMENTS; i++) {
+        std::optional<size_t> elementsAccessed = skipList.insert(i, i);
+        CHECK(elementsAccessed.has_value());
+        heights.push_back(skipList.height(i));
+    }
+
+    REQUIRE(skipList.find(0).second == 6);
+    REQUIRE(skipList.find(1).second == 6);
+    REQUIRE(skipList.find(2).second == 7);
+
+    REQUIRE(heights == EXPECTED_HEIGHTS);
+}
+
 // TEST_CASE("SkipList:TestStubs:ValidateNumberElementsAccessedInsert",
 //           "[SkipList][Stub]") {
-//     REQUIRE(false);
+//     const unsigned int NUMBER_OF_ELEMENTS = 10;
+//     const std::vector<unsigned> EXPECTED_HEIGHTS = {1, 2, 1, 3, 1,
+//                                                     2, 1, 4, 1, 2};
+
+//     proj2::SkipList<unsigned, unsigned> skipList;
+//     std::vector<unsigned> heights;
+
+//     for (unsigned i = 0; i < NUMBER_OF_ELEMENTS; i++) {
+//         std::optional<size_t> elementsAccessed = skipList.insert(i, i);
+//         CHECK(elementsAccessed.has_value());
+//         REQUIRE(elementsAccessed.value() == skipList.find(i).second-skipList.height(i)-1);
+//         heights.push_back(skipList.height(i));
+//     }
 // }
 
-// TEST_CASE("SkipList:TestStubs:TestFailedInsertCase", "[SkipList][Stub]") {
-//     // Hint: std::nullopt
-//     REQUIRE(false);
-// }
+TEST_CASE("SkipList:TestStubs:TestFailedInsertCase", "[SkipList][Stub]") {
+    proj2::SkipList<unsigned, unsigned> skipList;
+    skipList.insert(1, 1);
+    REQUIRE(skipList.insert(1, 2)==std::nullopt);
+}
+
+TEST_CASE("SkipList:TestStubs:TestValueRandom", "[SkipList][Stub]") {
+    proj2::SkipList<unsigned, std::string> skipList;
+    skipList.insert(1, "1");
+    REQUIRE(skipList.insert(1, "2")==std::nullopt);
+}
 
 // TEST_CASE("SkipList:TestStubs:Test100000InsertsAndFinds",
 //           "[SkipList][Stub][Slow]") {

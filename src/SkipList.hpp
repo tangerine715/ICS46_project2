@@ -302,7 +302,6 @@ size_t SkipList<K, V>::height(const K& key) const {
         while (temp->forward != nullptr && temp->forward->item && temp->forward->item->first<key)
         {
             temp = temp->forward;
-            // std::cout << "going forward for height!" << std::endl;
         }
         if (temp->forward != nullptr && temp->forward->item && temp->forward->item->first == key) 
         {
@@ -411,12 +410,12 @@ std::pair<V&, size_t> SkipList<K, V>::find(const K& key) {
 template <typename K, typename V>
 std::optional<size_t> SkipList<K, V>::insert(const K& key, const V& value) {
     // std::cout << "BEGINNING TO INSERT " << key << "," << value << std::endl;
-    try 
+    try
     {
-        (void) find(key);
+        (void)find(key);
         return std::nullopt;
-    } 
-    catch (std::out_of_range) { } //just in case of somehow inserting random nodes
+    }
+    catch (std::out_of_range &e) { }
     size_t tracker = 0;
     size_t curSize = size();
     constexpr size_t BOUNDARY = 16;
@@ -513,18 +512,21 @@ std::vector<K> SkipList<K, V>::allKeysInOrder() const {
 
 template <typename K, typename V>
 bool SkipList<K, V>::isSmallestKey(const K& key) const {
+    (void)find(key);
     Node* temp = head;
     for (; temp->down != nullptr; temp = temp->down) { }
-    if (temp->forward == nullptr) { return false; }
-    return temp->forward->item && temp->forward->item->first==key;
+    temp = temp->forward;
+    if (temp == nullptr) { return false; }
+    return temp->item && temp->item->first==key;
 }
 
 template <typename K, typename V>
 bool SkipList<K, V>::isLargestKey(const K& key) const {
+    (void)find(key);
     Node* temp = head;
     for (; temp->down != nullptr; temp = temp->down) { }
     for (; temp->forward != nullptr; temp = temp->forward) { }
-    return temp->item->first==key;
+    return temp->item && temp->item->first==key;
 }
 
 template <typename K, typename V>
